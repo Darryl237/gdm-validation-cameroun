@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}GDM Predict{% endblock %} — CHU Yaoundé</title>
+<style>
+  :root {
+    --primary: #667eea; --primary-dark: #764ba2;
+    --success: #22c55e; --danger: #ef4444; --warning: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    background-image: url('/static/watermark.png');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin: 0; color: #1e293b;
+  }
+  .navbar {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white; padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+    height: 62px; box-shadow: 0 2px 12px rgba(102,126,234,0.25); position: sticky; top: 0; z-index: 100;
+  }
+  .navbar .brand { font-weight: 800; font-size: 1.05em; display: flex; align-items: center; gap: 8px; }
+  .navbar .links { display: flex; gap: 4px; }
+  .navbar .links a {
+    color: rgba(255,255,255,0.85); text-decoration: none; padding: 8px 14px; border-radius: 8px;
+    font-size: 0.9em; font-weight: 600; transition: background .15s;
+  }
+  .navbar .links a:hover, .navbar .links a.active { background: rgba(255,255,255,0.18); color: white; }
+  .navbar .profile { display: flex; align-items: center; gap: 12px; font-size: 0.88em; }
+  .navbar .profile .who { text-align: right; line-height: 1.2; }
+  .navbar .profile .who b { display: block; }
+  .navbar .profile .who span { opacity: 0.8; font-size: 0.85em; }
+  .navbar .profile a.logout {
+    background: rgba(255,255,255,0.15); color: white; text-decoration: none; padding: 7px 12px;
+    border-radius: 8px; font-size: 0.85em; font-weight: 600;
+  }
+  .navbar .profile a.logout:hover { background: rgba(255,255,255,0.28); }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.6);
+  }
+  .avatar-initials {
+    width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9em;
+    border: 2px solid rgba(255,255,255,0.6);
+  }
+  @media (max-width: 800px) {
+    .navbar { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 8px; }
+    .navbar .links { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+  }
+
+  .page { max-width: 860px; margin: 30px auto; padding: 0 15px; }
+
+  .card { background: white; border-radius: 14px; padding: 28px 32px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+          margin-bottom: 20px; position: relative; z-index: 0; }
+
+  @media print { .navbar { display: none; } }
+</style>
+{% block extra_style %}{% endblock %}
+</head>
+<body>
+
+<div class="navbar">
+  <div class="brand">🏥 GDM Predict — CHU Yaoundé</div>
+  <div class="links">
+    <a href="{{ url_for('home') }}" class="{{ 'active' if request.endpoint=='home' }}">{{ ui('nav_accueil') }}</a>
+    <a href="{{ url_for('predire_page') }}" class="{{ 'active' if request.endpoint=='predire_page' }}">{{ ui('nav_prediction') }}</a>
+    <a href="{{ url_for('historique') }}" class="{{ 'active' if request.endpoint=='historique' }}">{{ ui('nav_historique') }}</a>
+    <a href="{{ url_for('parametres') }}" class="{{ 'active' if request.endpoint=='parametres' }}">{{ ui('nav_parametres') }}</a>
+    <a href="{{ url_for('set_language', lang_code='en' if current_lang=='fr' else 'fr') }}" style="opacity:0.85;">🌐 {{ ui('lang_switch') }}</a>
+  </div>
+  <div class="profile">
+    <div class="who"><b>{{ session.get('nom_complet','') }}</b><span>{{ session.get('role','') }}</span></div>
+    {% if session.get('photo_path') %}
+      <img src="{{ session.get('photo_path') }}" class="avatar" alt="Photo de profil">
+    {% else %}
+      <div class="avatar-initials">{{ session.get('nom_complet','?')[:1] }}</div>
+    {% endif %}
+    <a href="{{ url_for('logout') }}" class="logout">{{ ui('nav_logout') }}</a>
+  </div>
+</div>
+
+<div class="page">
+  {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

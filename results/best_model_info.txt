@@ -1,0 +1,4 @@
+Meilleur modèle: LogisticRegression
+Params: {'C': 1, 'penalty': 'l2'}
+AUC Modèle A (test interne France): 0.7509
+AUC Modèle B (test interne France): 0.7517

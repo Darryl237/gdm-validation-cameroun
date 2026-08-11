@@ -1,0 +1,3 @@
+,n_total,n_positifs,n_negatifs,TP,TN,FP,FN,sensibilite,specificite,accuracy,precision_PPV,npv,f1_score,auc_roc,kpi_sensibilite_85_atteint,kpi_specificite_75_atteint,kpi_auc_085_atteint
+Modele_A,455,243,212,207,100,112,36,0.8519,0.4717,0.6747,0.6489,0.7353,0.7367,0.7891,True,False,False
+Modele_B_avec_niveau_etude,455,243,212,207,100,112,36,0.8519,0.4717,0.6747,0.6489,0.7353,0.7367,0.7833,True,False,False

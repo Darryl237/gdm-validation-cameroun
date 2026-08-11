@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ ui('login_title') }}</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .lang-toggle {
+    position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white;
+    text-decoration: none; padding: 8px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 600;
+  }
+  .lang-toggle:hover { background: rgba(255,255,255,0.32); }
+  .login-card {
+    background: white; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-card h1 { font-size: 1.3em; margin: 0 0 4px; color: #1e293b; text-align: center; }
+  .login-card p.subtitle { text-align: center; color: #64748b; font-size: 0.85em; margin: 0 0 28px; }
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 0.85em; font-weight: 600; color: #334155; margin-bottom: 6px; }
+  input {
+    width: 100%; padding: 11px 14px; border: 1.5px solid #dbe0ea; border-radius: 8px; font-size: 0.95em;
+  }
+  input:focus { outline: none; border-color: #667eea; }
+  button {
+    width: 100%; padding: 13px; margin-top: 10px; background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 8px; font-size: 1em; font-weight: 700; cursor: pointer;
+  }
+  .error { background: #fef2f2; color: #b91c1c; padding: 10px 14px; border-radius: 8px; font-size: 0.85em;
+           margin-bottom: 16px; }
+  .demo-hint {
+    margin-top: 22px; padding: 14px; background: #eef2ff; border-radius: 8px; font-size: 0.78em;
+    color: #4338ca; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <a href="{{ url_for('set_language', lang_code='en' if current_lang=='fr' else 'fr') }}" class="lang-toggle">🌐 {{ ui('lang_switch') }}</a>
+
+  <div class="login-card">
+    <h1>{{ ui('login_title') }}</h1>
+    <p class="subtitle">{{ ui('login_subtitle') }}</p>
+
+    {% if error %}<div class="error">⚠️ {{ ui('login_error') }}</div>{% endif %}
+
+    <form method="POST">
+      <div class="form-group">
+        <label>{{ ui('login_username') }}</label>
+        <input type="text" name="username" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>{{ ui('login_password') }}</label>
+        <input type="password" name="password" required>
+      </div>
+      <button type="submit">{{ ui('login_button') }}</button>
+    </form>
+
+    <div class="demo-hint">
+      <b>{{ ui('login_demo_hint') }}</b><br>
+      dr.fotso / CHU2026!<br>
+      sage.femme / CHU2026!
+    </div>
+  </div>
+</body>
+</html>

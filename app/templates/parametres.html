@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ ui('nav_parametres') }}{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ ui('parametres_title') }}</h2>
+  <p style="color:#64748b; font-size:0.88em;">{{ ui('parametres_subtitle') }}</p>
+
+  <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:0.92em;">
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_algo') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ model_type }}</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_nfeatures') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ n_features }}</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_seuil') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ seuil }}</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_sensibilite') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ "%.1f"|format(validation_info.sensibilite*100) if validation_info.sensibilite else "—" }}%</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_specificite') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ "%.1f"|format(validation_info.specificite*100) if validation_info.specificite else "—" }}%</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_auc') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ "%.3f"|format(validation_info.auc_roc) if validation_info.auc_roc else "—" }}</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_train') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ ui('parametres_train_desc') }}</td></tr>
+    <tr><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_val') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ ui('parametres_val_desc') }}, {{ validation_info.n_total }}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">{{ ui('parametres_account_title') }}</h3>
+  <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+    {% if session.get('photo_path') %}
+      <img src="{{ session.get('photo_path') }}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #eef2ff;">
+    {% else %}
+      <div style="width:80px; height:80px; border-radius:50%; background:#eef2ff; color:#4338ca;
+        display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.8em;">
+        {{ session.get('nom_complet','?')[:1] }}
+      </div>
+    {% endif %}
+    <form action="{{ url_for('upload_photo') }}" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center;">
+      <input type="file" name="photo" accept=".png,.jpg,.jpeg" required style="font-size:0.85em;">
+      <button type="submit" style="background:#667eea; color:white; border:none; padding:9px 16px;
+        border-radius:8px; cursor:pointer; font-size:0.85em; font-weight:600;">{{ ui('parametres_photo_btn') }}</button>
+    </form>
+  </div>
+  <table style="width:100%; border-collapse:collapse; font-size:0.92em;">
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_name') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ session.get('nom_complet','') }}</td></tr>
+    <tr><td style="padding:12px 8px; color:#64748b;">{{ ui('parametres_role') }}</td><td style="padding:12px 8px; font-weight:600; text-align:right;">{{ session.get('role','') }}</td></tr>
+  </table>
+  <p style="font-size:0.78em; color:#94a3b8; margin-top:14px;">{{ ui('parametres_account_note') }}</p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,5 @@
+n_total,n_positifs,n_negatifs,TP,TN,FP,FN,sensibilite,specificite,accuracy,precision_PPV,npv,f1_score,auc_roc,kpi_sensibilite_85_atteint,kpi_specificite_75_atteint,kpi_auc_085_atteint,groupe,n
+96,19,77,5,64,13,14,0.2632,0.8312,0.7188,0.2778,0.8205,0.2703,0.674,False,True,False,IMC_cat_2,96
+163,78,85,57,33,52,21,0.7308,0.3882,0.5521,0.5229,0.6111,0.6096,0.6161,False,False,False,IMC_cat_3,163
+170,126,44,126,2,42,0,1.0,0.0455,0.7529,0.75,1.0,0.8571,0.7886,True,False,False,IMC_cat_4,170
+24,19,5,19,0,5,0,1.0,0.0,0.7917,0.7917,,0.8837,0.8105,True,False,False,IMC_cat_5,24

@@ -1,0 +1,6 @@
+,n_total,n_positifs,n_negatifs,TP,TN,FP,FN,sensibilite,specificite,accuracy,precision_PPV,npv,f1_score,auc_roc,kpi_sensibilite_85_atteint,kpi_specificite_75_atteint,kpi_auc_085_atteint
+LogisticRegression,6000,675,5325,461,3698,1627,214,0.683,0.6945,0.6932,0.2208,0.9453,0.3337,0.7509,False,False,False
+GradientBoosting,6000,675,5325,354,4221,1104,321,0.5244,0.7927,0.7625,0.2428,0.9293,0.3319,0.7091,False,True,False
+SVM,6000,675,5325,404,3811,1514,271,0.5985,0.7157,0.7025,0.2106,0.9336,0.3116,0.6961,False,False,False
+XGBoost,6000,675,5325,58,5230,95,617,0.0859,0.9822,0.8813,0.3791,0.8945,0.1401,0.696,False,True,False
+RandomForest,6000,675,5325,36,5227,98,639,0.0533,0.9816,0.8772,0.2687,0.8911,0.089,0.6727,False,True,False

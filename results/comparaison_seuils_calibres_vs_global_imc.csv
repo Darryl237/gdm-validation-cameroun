@@ -1,0 +1,5 @@
+groupe,n,sensibilite_seuil_global,specificite_seuil_global,groupe_str,sensibilite_seuil_calibre,specificite_seuil_calibre,seuil_calibre
+IMC_cat_2,96,0.2632,0.8312,IMC_cat_2,0.8947,0.2857,0.2031
+IMC_cat_3,163,0.7308,0.3882,IMC_cat_3,0.8974,0.1765,0.3701
+IMC_cat_4,170,1.0,0.0455,IMC_cat_4,0.8651,0.5455,0.7518
+IMC_cat_5,24,1.0,0.0,IMC_cat_5,0.8947,0.2,0.7139

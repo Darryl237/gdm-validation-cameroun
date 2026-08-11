@@ -1,0 +1,34 @@
+# Environnement virtuel
+.venv/
+gdm_env/
+venv/
+__pycache__/
+*.pyc
+
+# Données sensibles — NE JAMAIS COMMITER (patients réels)
+data/raw/Cas_positifs_243.csv
+data/raw/cas_negatifs_212.csv
+data/processed/*.csv
+
+# Base de données application — comptes praticiens + historique des prédictions patientes
+app/gdm_app.db
+
+# Photos de profil uploadées (personnelles, pas nécessaires au dépôt)
+app/static/uploads/*
+
+# Modèles (gros fichiers, régénérables)
+models/*.pkl
+data/processed/*.npy
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Logs
+*.log

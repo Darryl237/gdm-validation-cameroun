@@ -1,0 +1,40 @@
+# ============================================================
+# GDM VALIDATION PROJECT — Requirements
+# Thèse Mastère DIA — Validation externe DG Cameroun
+# Python 3.10+ recommandé
+# ============================================================
+
+# --- Data manipulation ---
+pandas==2.2.2
+numpy==1.26.4
+
+# --- Machine Learning ---
+scikit-learn==1.5.1
+xgboost==2.1.0
+imbalanced-learn==0.12.3
+
+# --- Interprétabilité ---
+shap==0.46.0
+
+# --- Visualisation ---
+matplotlib>=3.9.1
+seaborn==0.13.2
+plotly==5.23.0
+
+# --- Notebooks ---
+jupyter==1.0.0
+ipykernel==6.29.5
+notebook==7.2.1
+
+# --- Application IA (Flask) ---
+flask==3.0.3
+gunicorn==22.0.0
+
+# --- Utilitaires ---
+joblib==1.4.2
+tqdm==4.66.4
+openpyxl==3.1.5
+
+# --- Statistiques ---
+scipy==1.14.0
+statsmodels==0.14.2

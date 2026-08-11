@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prédiction Diabète Gestationnel — CHU Yaoundé</title>
+<style>
+  :root {
+    --primary: #667eea;
+    --primary-dark: #764ba2;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #f5f7fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9edf5 100%);
+    margin: 0; padding: 30px 15px; color: #1e293b;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white; border-radius: 16px 16px 0 0; padding: 30px 35px;
+    box-shadow: 0 10px 30px rgba(102,126,234,0.25);
+  }
+  .header h1 { margin: 0 0 6px; font-size: 1.6em; display: flex; align-items: center; gap: 10px; }
+  .header p { margin: 0; opacity: 0.92; font-size: 0.95em; }
+
+  .transparency-bar {
+    background: rgba(255,255,255,0.12); border-radius: 10px; padding: 14px 18px;
+    margin-top: 18px; display: flex; gap: 22px; flex-wrap: wrap; font-size: 0.85em;
+  }
+  .transparency-bar .stat { display: flex; flex-direction: column; }
+  .transparency-bar .stat b { font-size: 1.3em; }
+
+  .card {
+    background: white; padding: 30px 35px; box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  }
+  .card:last-of-type { border-radius: 0 0 16px 16px; }
+
+  .demo-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .demo-btn {
+    background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; padding: 8px 14px;
+    border-radius: 20px; font-size: 0.82em; cursor: pointer; transition: all .2s;
+  }
+  .demo-btn:hover { background: #e0e7ff; }
+
+  .section-title {
+    display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark);
+    margin: 26px 0 14px; font-size: 1.05em; border-bottom: 2px solid #eef1f8; padding-bottom: 8px;
+  }
+  .section-title:first-of-type { margin-top: 6px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .form-group label {
+    display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.88em;
+    color: #334155; margin-bottom: 6px;
+  }
+  input, select {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #dbe0ea; border-radius: 8px;
+    font-size: 0.95em; transition: border .2s; background: #fbfcfe;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--primary); background: white; }
+
+  button.submit-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;
+    border: none; padding: 15px; border-radius: 10px; font-size: 1.05em; font-weight: 700;
+    cursor: pointer; width: 100%; margin-top: 26px; transition: transform .15s;
+    box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+  }
+  button.submit-btn:hover { transform: translateY(-2px); }
+  button.submit-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  /* RESULT PANEL */
+  #result-panel { display: none; margin-top: 26px; }
+  .result-card {
+    border-radius: 14px; padding: 26px; border-left: 6px solid;
+  }
+  .result-card.haut { background: #fef2f2; border-color: var(--danger); }
+  .result-card.bas { background: #f0fdf4; border-color: var(--success); }
+
+  .gauge-row { display: flex; align-items: center; gap: 24px; margin-bottom: 18px; }
+  .gauge-wrap { position: relative; width: 130px; height: 130px; flex-shrink: 0; }
+  .gauge-label { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  .gauge-label .pct { font-size: 1.6em; font-weight: 800; }
+  .gauge-label .txt { font-size: 0.7em; color: #64748b; }
+
+  .result-headline { font-size: 1.3em; font-weight: 800; margin-bottom: 4px; }
+  .result-card.haut .result-headline { color: #b91c1c; }
+  .result-card.bas .result-headline { color: #15803d; }
+  .result-reco { font-size: 0.95em; color: #334155; }
+
+  .contributions-box { background: white; border-radius: 10px; padding: 16px 18px; margin-top: 18px; }
+  .contributions-box h4 { margin: 0 0 10px; font-size: 0.9em; color: #475569; }
+  .contrib-item { display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; font-size: 0.88em; border-bottom: 1px solid #f1f5f9; }
+  .contrib-item:last-child { border-bottom: none; }
+  .contrib-arrow { font-weight: 800; margin-right: 6px; }
+  .contrib-arrow.up { color: var(--danger); }
+  .contrib-arrow.down { color: var(--success); }
+
+  .equity-box {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 16px;
+    margin-top: 14px; font-size: 0.85em; color: #92400e;
+  }
+  .equity-box b { display: block; margin-bottom: 4px; }
+  .equity-box ul { margin: 4px 0 0; padding-left: 18px; }
+
+  .disclaimer-box {
+    font-size: 0.78em; color: #64748b; margin-top: 16px; padding-top: 14px;
+    border-top: 1px dashed #cbd5e1; font-style: italic;
+  }
+
+  .actions-row { display: flex; gap: 10px; margin-top: 16px; }
+  .actions-row button {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1.5px solid #dbe0ea;
+    background: white; cursor: pointer; font-size: 0.85em; font-weight: 600; color: #475569;
+  }
+  .actions-row button:hover { background: #f8fafc; }
+
+  #error-box { display: none; background: #fef2f2; color: #b91c1c; padding: 14px 18px;
+    border-radius: 10px; margin-top: 16px; font-size: 0.9em; }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .demo-bar, .actions-row, button.submit-btn, form { display: none !important; }
+    .card { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🏥 Prédiction du Risque de Diabète Gestationnel</h1>
+    <p>Outil de support à la décision — CHU Yaoundé · Validation externe, Mastère DIA</p>
+
+    <div class="transparency-bar">
+      <div class="stat"><b>{{ "%.1f"|format(validation_info.sensibilite*100) if validation_info.sensibilite else "—" }}%</b>Sensibilité</div>
+      <div class="stat"><b>{{ "%.1f"|format(validation_info.specificite*100) if validation_info.specificite else "—" }}%</b>Spécificité</div>
+      <div class="stat"><b>{{ "%.2f"|format(validation_info.auc_roc) if validation_info.auc_roc else "—" }}</b>AUC</div>
+      <div class="stat"><b>{{ validation_info.n_total }}</b>cas réels validés (Cameroun)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="demo-bar">
+      {% for key, patient in demo_patients.items() %}
+      <button type="button" class="demo-btn" onclick="loadDemo('{{ key }}')">{{ patient.label }}</button>
+      {% endfor %}
+    </div>
+
+    <form id="predictForm">
+      {% for section in sections %}
+      <div class="section-title">{{ section.icon }} {{ section.label }}</div>
+      <div class="form-grid">
+        {% for key, info in features.items() %}
+        {% if info.section == section.id %}
+        <div class="form-group">
+          <label>{{ info.icon }} {{ info.label }}</label>
+          {% if info.type == 'number' %}
+            <input type="number" name="{{ key }}" id="field_{{ key }}" min="{{ info.min }}" max="{{ info.max }}" placeholder="Non renseigné si vide">
+          {% elif info.type == 'select' %}
+            <select name="{{ key }}" id="field_{{ key }}">
+              <option value="">-- Non renseigné --</option>
+              {% for val, lbl in info.options %}
+              <option value="{{ val }}">{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          {% elif info.type == 'boolean' %}
+            <select name="{{ key }}" id="field_{{ key }}">
+              <option value="">-- Non renseigné --</option>
+              <option value="Oui">Oui</option>
+              <option value="Non">Non</option>
+            </select>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+      <button type="submit" class="submit-btn" id="submitBtn">Calculer le risque</button>
+    </form>
+
+    <div id="error-box"></div>
+
+    <div id="result-panel">
+      <div class="result-card" id="resultCard">
+        <div class="gauge-row">
+          <div class="gauge-wrap">
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              <circle cx="65" cy="65" r="55" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+              <circle id="gaugeArc" cx="65" cy="65" r="55" fill="none" stroke="#667eea" stroke-width="12"
+                      stroke-linecap="round" stroke-dasharray="345.6" stroke-dashoffset="345.6"
+                      transform="rotate(-90 65 65)"/>
+            </svg>
+            <div class="gauge-label">
+              <span class="pct" id="gaugePct">--</span>
+              <span class="txt">probabilité</span>
+            </div>
+          </div>
+          <div>
+            <div class="result-headline" id="resultHeadline">—</div>
+            <div class="result-reco" id="resultReco">—</div>
+          </div>
+        </div>
+
+        <div class="contributions-box" id="contribBox" style="display:none;">
+          <h4>📊 Facteurs ayant le plus influencé cette prédiction</h4>
+          <div id="contribList"></div>
+        </div>
+
+        <div class="equity-box" id="equityBox" style="display:none;">
+          <b>⚠️ Avertissement de fiabilité (Section 7.7)</b>
+          <ul id="equityList"></ul>
+        </div>
+
+        <div class="disclaimer-box" id="disclaimerText"></div>
+
+        <div class="actions-row">
+          <button type="button" onclick="window.print()">🖨️ Imprimer ce résultat</button>
+          <button type="button" onclick="resetForm()">🔄 Nouvelle évaluation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const demoPatients = {{ demo_patients | tojson }};
+const seuil = {{ seuil }};
+const CIRC = 345.6; // 2*pi*55
+
+function loadDemo(key) {
+  const data = demoPatients[key].data;
+  for (const [k, v] of Object.entries(data)) {
+    const el = document.getElementById('field_' + k);
+    if (el) el.value = v;
+  }
+}
+
+function resetForm() {
+  document.getElementById('predictForm').reset();
+  document.getElementById('result-panel').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+document.getElementById('predictForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Calcul en cours...';
+  document.getElementById('error-box').style.display = 'none';
+
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const resp = await fetch('/predict', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await resp.json();
+
+    if (result.error) {
+      document.getElementById('error-box').textContent = '⚠️ ' + result.error;
+      document.getElementById('error-box').style.display = 'block';
+      document.getElementById('result-panel').style.display = 'none';
+    } else {
+      renderResult(result);
+    }
+  } catch (err) {
+    document.getElementById('error-box').textContent = '⚠️ Erreur de connexion au serveur.';
+    document.getElementById('error-box').style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Calculer le risque';
+  }
+});
+
+function renderResult(r) {
+  const panel = document.getElementById('result-panel');
+  const card = document.getElementById('resultCard');
+  const hautRisque = r.classification === 'Haut risque';
+
+  card.className = 'result-card ' + (hautRisque ? 'haut' : 'bas');
+  document.getElementById('resultHeadline').textContent =
+    (hautRisque ? '🔴 ' : '🟢 ') + r.classification + ' — ' + (r.probabilite*100).toFixed(1) + '%';
+  document.getElementById('resultReco').textContent = r.recommandation;
+
+  // Gauge
+  const pct = r.probabilite;
+  document.getElementById('gaugePct').textContent = (pct*100).toFixed(0) + '%';
+  const offset = CIRC * (1 - pct);
+  const arc = document.getElementById('gaugeArc');
+  arc.style.stroke = hautRisque ? '#ef4444' : '#22c55e';
+  arc.setAttribute('stroke-dashoffset', offset);
+
+  // Contributions
+  const contribBox = document.getElementById('contribBox');
+  const contribList = document.getElementById('contribList');
+  contribList.innerHTML = '';
+  if (r.contributions && r.contributions.length > 0) {
+    r.contributions.forEach(c => {
+      const up = c.direction === 'augmente';
+      contribList.innerHTML += `<div class="contrib-item">
+        <span><span class="contrib-arrow ${up?'up':'down'}">${up?'▲':'▼'}</span>${c.label}</span>
+        <span>${up?'augmente':'diminue'} le risque</span>
+      </div>`;
+    });
+    contribBox.style.display = 'block';
+  } else {
+    contribBox.style.display = 'none';
+  }
+
+  // Equity caveats
+  const equityBox = document.getElementById('equityBox');
+  const equityList = document.getElementById('equityList');
+  equityList.innerHTML = '';
+  if (r.equity_caveats && r.equity_caveats.length > 0) {
+    r.equity_caveats.forEach(c => { equityList.innerHTML += `<li>${c}</li>`; });
+    equityBox.style.display = 'block';
+  } else {
+    equityBox.style.display = 'none';
+  }
+
+  document.getElementById('disclaimerText').textContent =
+    '⚠️ ' + r.disclaimer + ` Seuil de décision appliqué : ${r.seuil_utilise} (calibré pour sensibilité ≥85%, Section 7.5.2).`;
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+</script>
+</body>
+</html>

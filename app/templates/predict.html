@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle Prédiction{% endblock %}
+{% block extra_style %}
+<style>
+  .demo-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .demo-btn { background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; padding: 8px 14px;
+    border-radius: 20px; font-size: 0.82em; cursor: pointer; }
+  .demo-btn:hover { background: #e0e7ff; }
+  .section-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #764ba2;
+    margin: 26px 0 14px; font-size: 1.05em; border-bottom: 2px solid #eef1f8; padding-bottom: 8px; }
+  .section-title:first-of-type { margin-top: 6px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group label { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.88em;
+    color: #334155; margin-bottom: 6px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1.5px solid #dbe0ea; border-radius: 8px;
+    font-size: 0.95em; background: #fbfcfe; }
+  input:focus, select:focus { outline: none; border-color: #667eea; background: white; }
+  button.submit-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none;
+    padding: 15px; border-radius: 10px; font-size: 1.05em; font-weight: 700; cursor: pointer; width: 100%;
+    margin-top: 26px; box-shadow: 0 6px 20px rgba(102,126,234,0.35); }
+  button.submit-btn:disabled { opacity: 0.6; cursor: wait; }
+  #error-box { display: none; background: #fef2f2; color: #b91c1c; padding: 14px 18px;
+    border-radius: 10px; margin-top: 16px; font-size: 0.9em; }
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ ui('predict_title') }}</h2>
+  <p style="color:#64748b; font-size:0.88em; margin-top:-8px;">{{ ui('predict_subtitle') }}</p>
+
+  <div class="demo-bar">
+    {% for key, patient in demo_patients.items() %}
+    <button type="button" class="demo-btn" onclick="loadDemo('{{ key }}')">{{ patient.label }}</button>
+    {% endfor %}
+  </div>
+
+  <form id="predictForm">
+    {% for section in sections %}
+    <div class="section-title">{{ section.icon }} {{ section.label }}</div>
+    <div class="form-grid">
+      {% for key, info in features.items() %}
+      {% if info.section == section.id %}
+      <div class="form-group">
+        <label>{{ info.icon }} {{ info.label }}</label>
+        {% if info.type == 'number' %}
+          <input type="number" name="{{ key }}" id="field_{{ key }}" min="{{ info.min }}" max="{{ info.max }}" placeholder="{{ ui('form_placeholder_empty') }}">
+        {% elif info.type == 'select' %}
+          <select name="{{ key }}" id="field_{{ key }}">
+            <option value="">{{ ui('form_not_specified') }}</option>
+            {% for val, lbl in info.options %}
+            <option value="{{ val }}">{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        {% elif info.type == 'boolean' %}
+          <select name="{{ key }}" id="field_{{ key }}">
+            <option value="">{{ ui('form_not_specified') }}</option>
+            <option value="Oui">{{ ui('form_oui') }}</option>
+            <option value="Non">{{ ui('form_non') }}</option>
+          </select>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="submit-btn" id="submitBtn">{{ ui('predict_submit') }}</button>
+  </form>
+
+  <div id="error-box"></div>
+</div>
+
+<script>
+const demoPatients = {{ demo_patients | tojson }};
+
+function loadDemo(key) {
+  const data = demoPatients[key].data;
+  for (const [k, v] of Object.entries(data)) {
+    const el = document.getElementById('field_' + k);
+    if (el) el.value = v;
+  }
+}
+
+document.getElementById('predictForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '{{ ui("predict_calculating") }}';
+  document.getElementById('error-box').style.display = 'none';
+
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const resp = await fetch('/predict', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await resp.json();
+
+    if (result.error) {
+      document.getElementById('error-box').textContent = '⚠️ ' + result.error;
+      document.getElementById('error-box').style.display = 'block';
+      btn.disabled = false; btn.textContent = '{{ ui("predict_submit") }}';
+    } else {
+      // Redirection vers la page résultat dédiée
+      window.location.href = '/resultat/' + result.prediction_id;
+    }
+  } catch (err) {
+    document.getElementById('error-box').textContent = '{{ ui("predict_error_connexion") }}';
+    document.getElementById('error-box').style.display = 'block';
+    btn.disabled = false; btn.textContent = '{{ ui("predict_submit") }}';
+  }
+});
+</script>
+{% endblock %}

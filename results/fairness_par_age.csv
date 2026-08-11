@@ -1,0 +1,4 @@
+n_total,n_positifs,n_negatifs,TP,TN,FP,FN,sensibilite,specificite,accuracy,precision_PPV,npv,f1_score,auc_roc,kpi_sensibilite_85_atteint,kpi_specificite_75_atteint,kpi_auc_085_atteint,groupe,n
+88,64,24,64,0,24,0,1.0,0.0,0.7273,0.7273,,0.8421,0.8939,True,False,True,>35 ans,88
+274,129,145,116,63,82,13,0.8992,0.4345,0.6533,0.5859,0.8289,0.7095,0.8188,True,False,False,25-35 ans,274
+93,50,43,27,37,6,23,0.54,0.8605,0.6882,0.8182,0.6167,0.6506,0.8335,False,True,False,<25 ans,93
