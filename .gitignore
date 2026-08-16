@@ -17,7 +17,7 @@ app/gdm_app.db
 app/static/uploads/*
 
 # Modèles (gros fichiers, régénérables)
-models/*.pkl
+#models/*.pkl
 data/processed/*.npy
 
 # Jupyter
