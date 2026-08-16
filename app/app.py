@@ -867,14 +867,31 @@ def health():
                      'seuil': SEUIL_DECISION, 'validation_info': VALIDATION_INFO})
 
 
-if __name__ == '__main__':
+try:
     init_db()
-    loaded = load_model()
-    load_seuil_officiel()
-    if not loaded:
-        print("⚠️ ATTENTION: models/model_A.pkl introuvable.")
-        print("   Exécuter les notebooks 01 à 05 avant de lancer l'application.")
-    else:
-        print("✅ Modèle chargé avec succès.")
-    print("\n🔑 Comptes de démonstration : dr.fotso / sage.femme — mot de passe : CHU2026!")
+    print("✅ init_db() terminé sans exception.", flush=True)
+except Exception as e:
+    import traceback
+    print("❌❌❌ ERREUR CRITIQUE dans init_db() :", str(e), flush=True)
+    traceback.print_exc()
+
+try:
+    _check_conn = get_db()
+    _check = _check_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    print(f"📋 Tables présentes dans {DB_PATH} après init_db() : {[r['name'] for r in _check]}", flush=True)
+    _check_conn.close()
+except Exception as e:
+    print("❌ Impossible de vérifier les tables :", str(e), flush=True)
+
+_model_loaded = load_model()
+load_seuil_officiel()
+if not _model_loaded:
+    print("⚠️ ATTENTION: models/model_A.pkl introuvable.")
+    print("   Exécuter les notebooks 01 à 05 avant de lancer l'application.")
+else:
+    print("✅ Modèle chargé avec succès.")
+print("\n🔑 Comptes de démonstration : dr.fotso / sage.femme — mot de passe : CHU2026!")
+
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
