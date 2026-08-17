@@ -21,6 +21,13 @@
     </div>
   </div>
 
+  {% if delete_error %}
+  <div style="background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:8px; font-size:0.88em; margin-bottom:16px;">⚠️ {{ delete_error }}</div>
+  {% endif %}
+  {% if reset_message %}
+  <div style="background:#f0fdf4; color:#15803d; padding:10px 14px; border-radius:8px; font-size:0.88em; margin-bottom:16px;">✅ {{ reset_message }}</div>
+  {% endif %}
+
   <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
     <thead>
       <tr style="background:#f8fafc; text-align:left;">
@@ -30,6 +37,7 @@
         <th style="padding:10px;">{{ ui('admin_col_type') }}</th>
         <th style="padding:10px;">{{ ui('admin_col_npred') }}</th>
         <th style="padding:10px;">{{ ui('admin_col_derniere') }}</th>
+        <th style="padding:10px;">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -47,6 +55,90 @@
         </td>
         <td style="padding:10px;">{{ u.n_predictions }}</td>
         <td style="padding:10px; font-size:0.85em; color:#64748b;">{{ u.derniere_prediction[:16].replace('T',' ') if u.derniere_prediction else '—' }}</td>
+        <td style="padding:10px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            {% if not u.is_admin %}
+            <a href="{{ url_for('admin_historique_utilisateur', target_id=u.id) }}" style="color:#667eea; text-decoration:none; font-weight:600; font-size:0.85em;">Historique</a>
+            {% endif %}
+            <button type="button" onclick="resetPassword({{ u.id }}, '{{ u.username }}')" style="background:none; border:none; color:#f59e0b; font-weight:600; font-size:0.85em; cursor:pointer; padding:0;">Réinitialiser mdp</button>
+            {% if u.id != session.get('user_id') %}
+            <form method="POST" action="{{ url_for('admin_supprimer_compte', target_id=u.id) }}" style="display:inline;" onsubmit="return confirm('Supprimer définitivement le compte {{ u.username }} et tout son historique ?');">
+              <button type="submit" style="background:none; border:none; color:#ef4444; font-weight:600; font-size:0.85em; cursor:pointer; padding:0;">Supprimer</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <form id="resetForm" method="POST" style="display:none;">
+    <input type="hidden" name="new_password_reset" id="resetPasswordValue">
+  </form>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">➕ Créer un compte praticien</h3>
+  {% if create_error %}
+  <div style="background:#fef2f2; color:#b91c1c; padding:10px 14px; border-radius:8px; font-size:0.88em; margin-bottom:16px;">⚠️ {{ create_error }}</div>
+  {% endif %}
+  <form method="POST" action="{{ url_for('admin_creer_compte') }}" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+    <div>
+      <label style="display:block; font-size:0.85em; font-weight:600; color:#334155; margin-bottom:6px;">Nom d'utilisateur</label>
+      <input type="text" name="new_username" required style="width:100%; padding:10px 12px; border:1.5px solid #dbe0ea; border-radius:8px;">
+    </div>
+    <div>
+      <label style="display:block; font-size:0.85em; font-weight:600; color:#334155; margin-bottom:6px;">Mot de passe</label>
+      <input type="text" name="new_password" required style="width:100%; padding:10px 12px; border:1.5px solid #dbe0ea; border-radius:8px;">
+    </div>
+    <div>
+      <label style="display:block; font-size:0.85em; font-weight:600; color:#334155; margin-bottom:6px;">Nom complet</label>
+      <input type="text" name="new_nom" required style="width:100%; padding:10px 12px; border:1.5px solid #dbe0ea; border-radius:8px;">
+    </div>
+    <div>
+      <label style="display:block; font-size:0.85em; font-weight:600; color:#334155; margin-bottom:6px;">Rôle</label>
+      <input type="text" name="new_role" placeholder="ex: Sage-femme, Gynécologue..." style="width:100%; padding:10px 12px; border:1.5px solid #dbe0ea; border-radius:8px;">
+    </div>
+    <div style="grid-column: 1 / -1;">
+      <button type="submit" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; padding:11px 20px; border-radius:8px; cursor:pointer; font-weight:700;">Créer le compte</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">📤 Export de données</h3>
+  <p style="color:#64748b; font-size:0.85em; margin-top:-6px;">Export au format CSV, pour analyse externe ou archivage.</p>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;">
+    <a href="{{ url_for('admin_export', data_type='utilisateurs') }}" style="background:#f1f5f9; color:#334155; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.88em; border:1.5px solid #dbe0ea;">⬇️ Comptes praticiens</a>
+    <a href="{{ url_for('admin_export', data_type='predictions') }}" style="background:#f1f5f9; color:#334155; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.88em; border:1.5px solid #dbe0ea;">⬇️ Toutes les prédictions</a>
+    <a href="{{ url_for('admin_export', data_type='logs') }}" style="background:#f1f5f9; color:#334155; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.88em; border:1.5px solid #dbe0ea;">⬇️ Journal d'accès complet</a>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">🕓 Journal d'accès (20 derniers événements)</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+    <thead>
+      <tr style="background:#f8fafc; text-align:left;">
+        <th style="padding:8px;">Date</th>
+        <th style="padding:8px;">Utilisateur</th>
+        <th style="padding:8px;">Action</th>
+        <th style="padding:8px;">Détail</th>
+        <th style="padding:8px;">IP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px; color:#64748b;">{{ log.timestamp[:19].replace('T',' ') }}</td>
+        <td style="padding:8px;">{{ log.username or '—' }}</td>
+        <td style="padding:8px;">
+          {% set colors = {'login_success':'#15803d','login_failed':'#b91c1c','logout':'#64748b','admin_create_user':'#4338ca','admin_delete_user':'#ef4444','admin_reset_password':'#f59e0b','admin_export':'#0891b2'} %}
+          <span style="color:{{ colors.get(log.action, '#334155') }}; font-weight:600;">{{ log.action }}</span>
+        </td>
+        <td style="padding:8px; color:#64748b;">{{ log.details or '—' }}</td>
+        <td style="padding:8px; color:#94a3b8; font-family:monospace; font-size:0.9em;">{{ log.ip_address or '—' }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -70,11 +162,21 @@
     </tr>
   </table>
   <p style="font-size:0.78em; color:#94a3b8; margin-top:14px;">
-    Cette page constitue l'accès administrateur au back office de l'application, requis par le
-    référentiel de certification. Un déploiement en production nécessiterait des fonctionnalités
-    supplémentaires (création/suppression de comptes, export de données, journalisation des accès)
-    hors périmètre de cette démonstration de thèse.
+    Back office administrateur complet : création et suppression de comptes, réinitialisation de
+    mots de passe, export de données, et journalisation systématique des accès (connexions,
+    échecs de connexion, actions administratives) — requis par le référentiel de certification.
   </p>
 </div>
+
+<script>
+function resetPassword(userId, username) {
+  const newPwd = prompt(`Nouveau mot de passe pour ${username} :`);
+  if (!newPwd || newPwd.trim() === '') return;
+  const form = document.getElementById('resetForm');
+  form.action = `/admin/utilisateur/${userId}/reset-password`;
+  document.getElementById('resetPasswordValue').value = newPwd;
+  form.submit();
+}
+</script>
 
 {% endblock %}

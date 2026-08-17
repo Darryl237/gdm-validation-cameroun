@@ -91,6 +91,22 @@ def get_db():
     return conn
 
 
+def log_access(action, username=None, details=None):
+    """Journalise un événement (connexion, action admin) dans access_logs.
+    Utilisé pour l'exigence de journalisation des accès du back office."""
+    try:
+        conn = get_db()
+        conn.execute(
+            'INSERT INTO access_logs (timestamp, username, action, details, ip_address) VALUES (?,?,?,?,?)',
+            (datetime.now().isoformat(), username, action, details,
+             request.remote_addr if request else None)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"⚠️ Échec journalisation ({action}): {e}", flush=True)
+
+
 def init_db():
     conn = get_db()
     c = conn.cursor()
@@ -110,6 +126,14 @@ def init_db():
             conn.commit()
         except sqlite3.OperationalError:
             pass  # colonne déjà présente
+    c.execute('''CREATE TABLE IF NOT EXISTS access_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        username TEXT,
+        action TEXT,
+        details TEXT,
+        ip_address TEXT
+    )''')
     c.execute('''CREATE TABLE IF NOT EXISTS predictions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -730,13 +754,16 @@ def login():
             session['role'] = user['role']
             session['photo_path'] = user['photo_path']
             session['is_admin'] = bool(user['is_admin'])
+            log_access('login_success', username=username)
             return redirect(url_for('home'))
+        log_access('login_failed', username=username)
         return render_template('login.html', error="Identifiants incorrects.")
     return render_template('login.html', error=None)
 
 
 @app.route('/logout')
 def logout():
+    log_access('logout', username=session.get('nom_complet'))
     session.clear()
     return redirect(url_for('login'))
 
@@ -818,8 +845,13 @@ def predict():
 def resultat(pred_id):
     lang = current_lang()
     conn = get_db()
-    row = conn.execute('SELECT * FROM predictions WHERE id = ? AND user_id = ?',
-                        (pred_id, session['user_id'])).fetchone()
+    if session.get('is_admin'):
+        # Un administrateur peut consulter le détail de n'importe quelle prédiction
+        # (accès back office, distinct de l'accès d'un praticien pair — voir Section 8.5)
+        row = conn.execute('SELECT * FROM predictions WHERE id = ?', (pred_id,)).fetchone()
+    else:
+        row = conn.execute('SELECT * FROM predictions WHERE id = ? AND user_id = ?',
+                            (pred_id, session['user_id'])).fetchone()
     conn.close()
     if row is None:
         return redirect(url_for('historique'))
@@ -861,29 +893,187 @@ def historique():
     return render_template('historique.html', predictions=predictions, n_haut=n_haut, n_bas=n_bas)
 
 
-@app.route('/admin')
-@admin_required
-def admin_panel():
+def _get_admin_context(create_error=None, delete_error=None, reset_message=None):
+    """Rassemble les données communes à l'affichage du back office (évite la répétition)."""
     conn = get_db()
     users = conn.execute('''
         SELECT u.id, u.username, u.nom_complet, u.role, u.is_admin,
-               COUNT(p.id) as n_predictions,
-               MAX(p.timestamp) as derniere_prediction
-        FROM users u
-        LEFT JOIN predictions p ON p.user_id = u.id
-        GROUP BY u.id
-        ORDER BY u.id
+               COUNT(p.id) as n_predictions, MAX(p.timestamp) as derniere_prediction
+        FROM users u LEFT JOIN predictions p ON p.user_id = u.id
+        GROUP BY u.id ORDER BY u.id
     ''').fetchall()
-
     stats = conn.execute('''
         SELECT COUNT(*) as total,
                SUM(CASE WHEN classification='Haut risque' THEN 1 ELSE 0 END) as n_haut
         FROM predictions
     ''').fetchone()
+    n_admins = conn.execute('SELECT COUNT(*) as n FROM users WHERE is_admin = 1').fetchone()['n']
+    logs = conn.execute('SELECT * FROM access_logs ORDER BY id DESC LIMIT 20').fetchall()
+    conn.close()
+    return dict(users=users, stats=stats, db_path=os.path.abspath(DB_PATH), n_admins=n_admins,
+                logs=logs, create_error=create_error, delete_error=delete_error, reset_message=reset_message)
+
+
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    return render_template('admin.html', **_get_admin_context())
+
+
+@app.route('/admin/creer-compte', methods=['POST'])
+@admin_required
+def admin_creer_compte():
+    username = request.form.get('new_username', '').strip()
+    password = request.form.get('new_password', '').strip()
+    nom_complet = request.form.get('new_nom', '').strip()
+    role = request.form.get('new_role', '').strip()
+
+    conn = get_db()
+    error = None
+    if not username or not password or not nom_complet:
+        error = "Tous les champs sont obligatoires."
+    elif conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone():
+        error = f"Le nom d'utilisateur '{username}' existe déjà."
+    else:
+        conn.execute(
+            'INSERT INTO users (username, password_hash, nom_complet, role, is_admin) VALUES (?,?,?,?,0)',
+            (username, generate_password_hash(password), nom_complet, role)
+        )
+        conn.commit()
+        log_access('admin_create_user', username=session.get('nom_complet'),
+                    details=f"Création du compte '{username}' ({role})")
     conn.close()
 
-    return render_template('admin.html', users=users, stats=stats,
-                            db_path=os.path.abspath(DB_PATH))
+    if error:
+        return render_template('admin.html', **_get_admin_context(create_error=error))
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/utilisateur/<int:target_id>/supprimer', methods=['POST'])
+@admin_required
+def admin_supprimer_compte(target_id):
+    conn = get_db()
+    target = conn.execute('SELECT * FROM users WHERE id = ?', (target_id,)).fetchone()
+    error = None
+
+    if not target:
+        error = "Compte introuvable."
+    elif target_id == session.get('user_id'):
+        error = "Impossible de supprimer votre propre compte pendant que vous êtes connecté."
+    elif target['is_admin']:
+        n_admins = conn.execute('SELECT COUNT(*) as n FROM users WHERE is_admin = 1').fetchone()['n']
+        if n_admins <= 1:
+            error = "Impossible de supprimer le dernier compte administrateur restant."
+
+    if not error:
+        conn.execute('DELETE FROM predictions WHERE user_id = ?', (target_id,))
+        conn.execute('DELETE FROM users WHERE id = ?', (target_id,))
+        conn.commit()
+        log_access('admin_delete_user', username=session.get('nom_complet'),
+                    details=f"Suppression du compte '{target['username']}' (et de son historique)")
+    conn.close()
+
+    if error:
+        return render_template('admin.html', **_get_admin_context(delete_error=error))
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/utilisateur/<int:target_id>/reset-password', methods=['POST'])
+@admin_required
+def admin_reset_password(target_id):
+    new_password = request.form.get('new_password_reset', '').strip()
+    conn = get_db()
+    target = conn.execute('SELECT * FROM users WHERE id = ?', (target_id,)).fetchone()
+
+    if not target or not new_password:
+        conn.close()
+        return redirect(url_for('admin_panel'))
+
+    conn.execute('UPDATE users SET password_hash = ? WHERE id = ?',
+                 (generate_password_hash(new_password), target_id))
+    conn.commit()
+    log_access('admin_reset_password', username=session.get('nom_complet'),
+                details=f"Réinitialisation du mot de passe de '{target['username']}'")
+    conn.close()
+
+    message = f"Mot de passe de '{target['username']}' réinitialisé avec succès."
+    return render_template('admin.html', **_get_admin_context(reset_message=message))
+
+
+@app.route('/admin/utilisateur/<int:target_id>/historique')
+@admin_required
+def admin_historique_utilisateur(target_id):
+    conn = get_db()
+    target_user = conn.execute('SELECT * FROM users WHERE id = ?', (target_id,)).fetchone()
+    if not target_user:
+        conn.close()
+        return redirect(url_for('admin_panel'))
+
+    rows = conn.execute('SELECT * FROM predictions WHERE user_id = ? ORDER BY timestamp DESC',
+                         (target_id,)).fetchall()
+    conn.close()
+    predictions = [dict(r) for r in rows]
+    n_haut = sum(1 for p in predictions if p['classification'] == 'Haut risque')
+    n_bas = len(predictions) - n_haut
+
+    return render_template('historique.html', predictions=predictions, n_haut=n_haut, n_bas=n_bas,
+                            admin_view_of=target_user)
+
+
+@app.route('/admin/export/<data_type>')
+@admin_required
+def admin_export(data_type):
+    import csv
+    import io
+
+    conn = get_db()
+    output = io.StringIO()
+
+    if data_type == 'utilisateurs':
+        rows = conn.execute('''
+            SELECT u.id, u.username, u.nom_complet, u.role, u.is_admin,
+                   COUNT(p.id) as n_predictions
+            FROM users u LEFT JOIN predictions p ON p.user_id = u.id
+            GROUP BY u.id ORDER BY u.id
+        ''').fetchall()
+        writer = csv.writer(output)
+        writer.writerow(['id', 'username', 'nom_complet', 'role', 'is_admin', 'n_predictions'])
+        for r in rows:
+            writer.writerow([r['id'], r['username'], r['nom_complet'], r['role'], r['is_admin'], r['n_predictions']])
+        filename = 'export_utilisateurs.csv'
+
+    elif data_type == 'predictions':
+        rows = conn.execute('''
+            SELECT p.id, u.username, p.timestamp, p.probabilite, p.classification,
+                   p.age_maternel, p.imc_ordinal, p.seuil_utilise
+            FROM predictions p LEFT JOIN users u ON u.id = p.user_id
+            ORDER BY p.timestamp DESC
+        ''').fetchall()
+        writer = csv.writer(output)
+        writer.writerow(['id', 'praticien', 'date', 'probabilite', 'classification', 'age', 'imc_categorie', 'seuil'])
+        for r in rows:
+            writer.writerow([r['id'], r['username'], r['timestamp'], r['probabilite'], r['classification'],
+                              r['age_maternel'], r['imc_ordinal'], r['seuil_utilise']])
+        filename = 'export_predictions.csv'
+
+    elif data_type == 'logs':
+        rows = conn.execute('SELECT * FROM access_logs ORDER BY id DESC').fetchall()
+        writer = csv.writer(output)
+        writer.writerow(['id', 'timestamp', 'username', 'action', 'details', 'ip_address'])
+        for r in rows:
+            writer.writerow([r['id'], r['timestamp'], r['username'], r['action'], r['details'], r['ip_address']])
+        filename = 'export_journal_acces.csv'
+
+    else:
+        conn.close()
+        return redirect(url_for('admin_panel'))
+
+    conn.close()
+    log_access('admin_export', username=session.get('nom_complet'), details=f"Export {data_type}")
+
+    response = app.response_class(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
 
 
 @app.route('/parametres')
