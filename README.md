@@ -3,7 +3,30 @@
 **Validation externe rigoureuse de modèles IA entraînés sur données synthétiques : Application à la prédiction du diabète gestationnel au CHU de Yaoundé**
 
 Thèse Mastère DIA — Nexa Digital School
-Auteur : Maitre | Contexte clinique : David Ben Zaza (Université de Yaoundé I)
+Auteur : Darryl MOMO | Contexte clinique : David Ben Zaza (Université de Yaoundé I)
+
+---
+
+## 🚀 Application en ligne
+
+**[👉 gdm-validation-cameroun.onrender.com](https://gdm-validation-cameroun.onrender.com)**
+
+Comptes de démonstration :
+
+| Utilisateur | Mot de passe | Rôle |
+|---|---|---|
+| `dr.fotso` | `CHU2026!` | Gynécologue-Obstétricien |
+| `sage.femme` | `CHU2026!` | Sage-femme |
+
+> ⚠️ Hébergement sur tier gratuit Render : l'application peut mettre jusqu'à 50 secondes à se réveiller après une période d'inactivité (comportement normal, pas un bug).
+
+---
+
+## 📋 À propos
+
+Ce projet valide, sur 455 cas réels de patientes camerounaises (CHU Yaoundé et HOGOPY), un modèle d'apprentissage supervisé entraîné exclusivement sur un jeu de données synthétique français (30 000 femmes). L'objectif : déterminer si un modèle IA entraîné sur des données idéales peut prédire de façon fiable le diabète gestationnel lorsqu'il est confronté à des données réelles, partielles et hétérogènes d'un contexte africain à ressources limitées.
+
+Le dépôt contient l'ensemble du pipeline (nettoyage des données, entraînement, validation externe, analyse de robustesse et d'équité) ainsi qu'une application web fonctionnelle (Flask) intégrant le modèle retenu, déployée en accès public pour démonstration.
 
 ---
 
@@ -122,5 +145,5 @@ python -m ipykernel install --user --name gdm_env --display-name "GDM Validation
 
 ## 📞 Contact
 
-- **Lead Technique Solution IA :** Maitre
+- **Lead Technique Solution IA :** Darryl MOMO
 - **Contexte clinique & données :** David Ben Zaza (Université de Yaoundé I)
