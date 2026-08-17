@@ -43,7 +43,7 @@
       {% for key, info in features.items() %}
       {% if info.section == section.id %}
       <div class="form-group">
-        <label>{{ info.icon }} {{ info.label }}</label>
+        <label for="field_{{ key }}">{{ info.icon }} {{ info.label }}</label>
         {% if info.type == 'number' %}
           <input type="number" name="{{ key }}" id="field_{{ key }}" min="{{ info.min }}" max="{{ info.max }}" placeholder="{{ ui('form_placeholder_empty') }}">
         {% elif info.type == 'select' %}
@@ -69,7 +69,7 @@
     <button type="submit" class="submit-btn" id="submitBtn">{{ ui('predict_submit') }}</button>
   </form>
 
-  <div id="error-box"></div>
+  <div id="error-box" role="alert" aria-live="assertive"></div>
 </div>
 
 <script>

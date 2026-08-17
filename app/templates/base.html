@@ -20,6 +20,18 @@
     background-attachment: fixed;
     margin: 0; color: #1e293b;
   }
+
+  /* Accessibilité — lien d'évitement, visible uniquement au focus clavier (WCAG 2.4.1) */
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; background: #1e293b; color: white;
+    padding: 12px 20px; z-index: 1000; border-radius: 0 0 8px 0; text-decoration: none;
+  }
+  .skip-link:focus { left: 0; }
+
+  /* Accessibilité — indicateur de focus visible partout (WCAG 2.4.7) */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid #4338ca; outline-offset: 2px;
+  }
   .navbar {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white; padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
@@ -66,13 +78,17 @@
 </head>
 <body>
 
-<div class="navbar">
+<a href="#main-content" class="skip-link">{{ 'Skip to main content' if current_lang=='en' else 'Aller au contenu principal' }}</a>
+<nav class="navbar" aria-label="{{ 'Main navigation' if current_lang=='en' else 'Navigation principale' }}">
   <div class="brand">🏥 GDM Predict — CHU Yaoundé</div>
   <div class="links">
     <a href="{{ url_for('home') }}" class="{{ 'active' if request.endpoint=='home' }}">{{ ui('nav_accueil') }}</a>
     <a href="{{ url_for('predire_page') }}" class="{{ 'active' if request.endpoint=='predire_page' }}">{{ ui('nav_prediction') }}</a>
     <a href="{{ url_for('historique') }}" class="{{ 'active' if request.endpoint=='historique' }}">{{ ui('nav_historique') }}</a>
     <a href="{{ url_for('parametres') }}" class="{{ 'active' if request.endpoint=='parametres' }}">{{ ui('nav_parametres') }}</a>
+    {% if session.get('is_admin') %}
+    <a href="{{ url_for('admin_panel') }}" class="{{ 'active' if request.endpoint=='admin_panel' }}" style="color:#fde68a;">{{ ui('nav_admin') }}</a>
+    {% endif %}
     <a href="{{ url_for('set_language', lang_code='en' if current_lang=='fr' else 'fr') }}" style="opacity:0.85;">🌐 {{ ui('lang_switch') }}</a>
   </div>
   <div class="profile">
@@ -84,11 +100,11 @@
     {% endif %}
     <a href="{{ url_for('logout') }}" class="logout">{{ ui('nav_logout') }}</a>
   </div>
-</div>
+</nav>
 
-<div class="page">
+<main class="page" id="main-content">
   {% block content %}{% endblock %}
-</div>
+</main>
 
 </body>
 </html>

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ ui('nav_admin') }}{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ ui('admin_title') }}</h2>
+  <p style="color:#64748b; font-size:0.88em;">{{ ui('admin_subtitle') }}</p>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:20px 0;">
+    <div style="background:#eef2ff; border-radius:10px; padding:18px; text-align:center;">
+      <div style="font-size:1.8em; font-weight:800; color:#4338ca;">{{ users|length }}</div>
+      <div style="font-size:0.8em; color:#64748b;">{{ ui('admin_total_users') }}</div>
+    </div>
+    <div style="background:#fef2f2; border-radius:10px; padding:18px; text-align:center;">
+      <div style="font-size:1.8em; font-weight:800; color:#b91c1c;">{{ stats.total or 0 }}</div>
+      <div style="font-size:0.8em; color:#64748b;">{{ ui('admin_total_preds') }}</div>
+    </div>
+    <div style="background:#fffbeb; border-radius:10px; padding:18px; text-align:center;">
+      <div style="font-size:1.8em; font-weight:800; color:#92400e;">{{ stats.n_haut or 0 }}</div>
+      <div style="font-size:0.8em; color:#64748b;">{{ 'Haut risque' if current_lang=='fr' else 'High risk' }}</div>
+    </div>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+    <thead>
+      <tr style="background:#f8fafc; text-align:left;">
+        <th style="padding:10px;">{{ ui('admin_col_user') }}</th>
+        <th style="padding:10px;">{{ ui('admin_col_nom') }}</th>
+        <th style="padding:10px;">{{ ui('admin_col_role') }}</th>
+        <th style="padding:10px;">{{ ui('admin_col_type') }}</th>
+        <th style="padding:10px;">{{ ui('admin_col_npred') }}</th>
+        <th style="padding:10px;">{{ ui('admin_col_derniere') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:10px; font-weight:600;">{{ u.username }}</td>
+        <td style="padding:10px;">{{ u.nom_complet }}</td>
+        <td style="padding:10px;">{{ u.role }}</td>
+        <td style="padding:10px;">
+          {% if u.is_admin %}
+            <span style="padding:3px 10px; border-radius:12px; font-size:0.82em; font-weight:600; background:#fef3c7; color:#92400e;">Admin</span>
+          {% else %}
+            <span style="padding:3px 10px; border-radius:12px; font-size:0.82em; font-weight:600; background:#e0e7ff; color:#4338ca;">Praticien</span>
+          {% endif %}
+        </td>
+        <td style="padding:10px;">{{ u.n_predictions }}</td>
+        <td style="padding:10px; font-size:0.85em; color:#64748b;">{{ u.derniere_prediction[:16].replace('T',' ') if u.derniere_prediction else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">{{ ui('admin_db_info') }}</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:10px; color:#64748b;">Type de base de données</td>
+      <td style="padding:10px; font-weight:600; text-align:right;">SQLite (fichier local, sans serveur)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:10px; color:#64748b;">Emplacement du fichier</td>
+      <td style="padding:10px; font-weight:600; text-align:right; font-family:monospace; font-size:0.85em;">{{ db_path }}</td>
+    </tr>
+    <tr>
+      <td style="padding:10px; color:#64748b;">Identifiants de connexion</td>
+      <td style="padding:10px; font-weight:600; text-align:right;">Aucun requis (SQLite = accès fichier local, pas de serveur réseau)</td>
+    </tr>
+  </table>
+  <p style="font-size:0.78em; color:#94a3b8; margin-top:14px;">
+    Cette page constitue l'accès administrateur au back office de l'application, requis par le
+    référentiel de certification. Un déploiement en production nécessiterait des fonctionnalités
+    supplémentaires (création/suppression de comptes, export de données, journalisation des accès)
+    hors périmètre de cette démonstration de thèse.
+  </p>
+</div>
+
+{% endblock %}

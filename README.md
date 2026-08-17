@@ -11,14 +11,26 @@ Auteur : Darryl MOMO | Contexte clinique : David Ben Zaza (Université de Yaound
 
 **[👉 gdm-validation-cameroun.onrender.com](https://gdm-validation-cameroun.onrender.com)**
 
-Comptes de démonstration :
+### Identifiants de test (comptes praticiens)
 
 | Utilisateur | Mot de passe | Rôle |
 |---|---|---|
 | `dr.fotso` | `CHU2026!` | Gynécologue-Obstétricien |
 | `sage.femme` | `CHU2026!` | Sage-femme |
 
-> ⚠️ Hébergement sur tier gratuit Render : l'application peut mettre jusqu'à 50 secondes à se réveiller après une période d'inactivité (comportement normal, pas un bug).
+### Accès administrateur (back office)
+
+| Utilisateur | Mot de passe | Accès |
+|---|---|---|
+| `admin` | `AdminCHU2026!` | Back office (`/admin`) — vue d'ensemble des comptes praticiens, activité, statistiques globales |
+
+### Identifiants de connexion à la base SQL
+
+**Aucun identifiant requis.** La base de données utilisée est **SQLite**, un moteur de base de données embarqué (fichier local, pas de serveur réseau) — il n'y a donc ni utilisateur, ni mot de passe, ni port de connexion, contrairement à un SGBD client-serveur (PostgreSQL, MySQL). Le fichier de base est généré automatiquement au premier lancement de l'application, à l'emplacement `app/gdm_app.db`, et est visible (chemin absolu) directement dans le back office administrateur (`/admin`) une fois connecté. Le dump SQL correspondant à la structure des tables est fourni séparément (voir section Livrable ci-dessous).
+
+> ⚠️ Hébergement sur tier gratuit Render : l'application peut mettre jusqu'à 50 secondes à se réveiller après une période d'inactivité (comportement normal, pas un bug). Le disque étant non-persistant sur ce tier, les comptes de démonstration ci-dessus sont recréés automatiquement à chaque redémarrage — l'historique de prédictions peut en revanche être réinitialisé entre deux sessions d'inactivité prolongée.
+
+> 🌐 **Compatibilité multi-navigateur** : application testée et fonctionnelle sur Chrome, Firefox et Edge (dernières versions stables).
 
 ---
 

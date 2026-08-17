@@ -100,14 +100,16 @@ def init_db():
         password_hash TEXT NOT NULL,
         nom_complet TEXT,
         role TEXT,
-        photo_path TEXT
+        photo_path TEXT,
+        is_admin INTEGER DEFAULT 0
     )''')
-    # Migration sûre pour les bases déjà créées avant l'ajout de photo_path
-    try:
-        c.execute('ALTER TABLE users ADD COLUMN photo_path TEXT')
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # colonne déjà présente
+    # Migration sûre pour les bases déjà créées avant l'ajout de photo_path / is_admin
+    for col_def in ['photo_path TEXT', 'is_admin INTEGER DEFAULT 0']:
+        try:
+            c.execute(f'ALTER TABLE users ADD COLUMN {col_def}')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # colonne déjà présente
     c.execute('''CREATE TABLE IF NOT EXISTS predictions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -138,14 +140,15 @@ def init_db():
         # Comptes de démonstration — à remplacer par un vrai processus d'onboarding
         # avant tout déploiement réel (hors périmètre de cette thèse).
         demo_accounts = [
-            ('dr.fotso', 'CHU2026!', 'Dr. Fotso', 'Gynécologue-Obstétricien'),
-            ('sage.femme', 'CHU2026!', 'Mme Nkolo', 'Sage-femme'),
+            ('dr.fotso', 'CHU2026!', 'Dr. Fotso', 'Gynécologue-Obstétricien', 0),
+            ('sage.femme', 'CHU2026!', 'Mme Nkolo', 'Sage-femme', 0),
+            ('admin', 'AdminCHU2026!', 'Administrateur Système', 'Administrateur', 1),
         ]
-        for username, pwd, nom, role in demo_accounts:
-            c.execute('INSERT INTO users (username, password_hash, nom_complet, role) VALUES (?,?,?,?)',
-                       (username, generate_password_hash(pwd), nom, role))
+        for username, pwd, nom, role, is_admin in demo_accounts:
+            c.execute('INSERT INTO users (username, password_hash, nom_complet, role, is_admin) VALUES (?,?,?,?,?)',
+                       (username, generate_password_hash(pwd), nom, role, is_admin))
         conn.commit()
-        print("✅ Comptes de démonstration créés : dr.fotso / sage.femme (mot de passe : CHU2026!)")
+        print("✅ Comptes de démonstration créés : dr.fotso / sage.femme / admin (mots de passe : CHU2026! / CHU2026! / AdminCHU2026!)")
     conn.close()
 
 
@@ -154,6 +157,17 @@ def login_required(f):
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        if not session.get('is_admin'):
+            return redirect(url_for('home'))
         return f(*args, **kwargs)
     return decorated
 
@@ -304,6 +318,13 @@ UI_STRINGS = {
     'fr': {
         'nav_accueil': 'Accueil', 'nav_prediction': 'Nouvelle Prédiction',
         'nav_historique': 'Historique', 'nav_parametres': 'Paramètres', 'nav_logout': 'Déconnexion',
+        'nav_admin': '🛡️ Back Office',
+        'admin_title': '🛡️ Back Office Administrateur',
+        'admin_subtitle': "Vue d'ensemble des comptes praticiens et de l'activité de la plateforme.",
+        'admin_col_user': "Nom d'utilisateur", 'admin_col_nom': 'Nom complet', 'admin_col_role': 'Rôle',
+        'admin_col_npred': 'Prédictions', 'admin_col_derniere': 'Dernière activité', 'admin_col_type': 'Type de compte',
+        'admin_total_preds': 'Prédictions totales (tous comptes)', 'admin_total_users': 'Comptes praticiens',
+        'admin_db_info': 'Informations techniques base de données',
         'login_title': '🏥 GDM Predict', 'login_subtitle': 'Outil de support à la décision — CHU Yaoundé',
         'login_username': "Nom d'utilisateur", 'login_password': 'Mot de passe',
         'login_button': 'Se connecter', 'login_error': 'Identifiants incorrects.',
@@ -359,6 +380,13 @@ UI_STRINGS = {
     'en': {
         'nav_accueil': 'Home', 'nav_prediction': 'New Prediction',
         'nav_historique': 'History', 'nav_parametres': 'Settings', 'nav_logout': 'Log out',
+        'nav_admin': '🛡️ Back Office',
+        'admin_title': '🛡️ Administrator Back Office',
+        'admin_subtitle': 'Overview of practitioner accounts and platform activity.',
+        'admin_col_user': 'Username', 'admin_col_nom': 'Full name', 'admin_col_role': 'Role',
+        'admin_col_npred': 'Predictions', 'admin_col_derniere': 'Last activity', 'admin_col_type': 'Account type',
+        'admin_total_preds': 'Total predictions (all accounts)', 'admin_total_users': 'Practitioner accounts',
+        'admin_db_info': 'Technical database information',
         'login_title': '🏥 GDM Predict', 'login_subtitle': 'Clinical decision support tool — CHU Yaoundé',
         'login_username': 'Username', 'login_password': 'Password',
         'login_button': 'Sign in', 'login_error': 'Incorrect credentials.',
@@ -701,6 +729,7 @@ def login():
             session['nom_complet'] = user['nom_complet']
             session['role'] = user['role']
             session['photo_path'] = user['photo_path']
+            session['is_admin'] = bool(user['is_admin'])
             return redirect(url_for('home'))
         return render_template('login.html', error="Identifiants incorrects.")
     return render_template('login.html', error=None)
@@ -832,6 +861,31 @@ def historique():
     return render_template('historique.html', predictions=predictions, n_haut=n_haut, n_bas=n_bas)
 
 
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    conn = get_db()
+    users = conn.execute('''
+        SELECT u.id, u.username, u.nom_complet, u.role, u.is_admin,
+               COUNT(p.id) as n_predictions,
+               MAX(p.timestamp) as derniere_prediction
+        FROM users u
+        LEFT JOIN predictions p ON p.user_id = u.id
+        GROUP BY u.id
+        ORDER BY u.id
+    ''').fetchall()
+
+    stats = conn.execute('''
+        SELECT COUNT(*) as total,
+               SUM(CASE WHEN classification='Haut risque' THEN 1 ELSE 0 END) as n_haut
+        FROM predictions
+    ''').fetchone()
+    conn.close()
+
+    return render_template('admin.html', users=users, stats=stats,
+                            db_path=os.path.abspath(DB_PATH))
+
+
 @app.route('/parametres')
 @login_required
 def parametres():
@@ -867,6 +921,9 @@ def health():
                      'seuil': SEUIL_DECISION, 'validation_info': VALIDATION_INFO})
 
 
+# Initialisation exécutée au chargement du module (pas seulement en lancement direct)
+# — indispensable pour un déploiement distant via Gunicorn (gunicorn app:app), qui importe
+# ce fichier sans jamais passer par le bloc if __name__ == '__main__'.
 try:
     init_db()
     print("✅ init_db() terminé sans exception.", flush=True)
@@ -875,6 +932,7 @@ except Exception as e:
     print("❌❌❌ ERREUR CRITIQUE dans init_db() :", str(e), flush=True)
     traceback.print_exc()
 
+# Vérification explicite post-init : la table users existe-t-elle vraiment ?
 try:
     _check_conn = get_db()
     _check = _check_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
